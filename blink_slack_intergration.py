@@ -1,5 +1,6 @@
 import os
 import time 
+import easygui as eg
 from dotenv import load_dotenv
 from slack_sdk import WebClient
 from slack_sdk.socket_mode import SocketModeClient
@@ -26,6 +27,8 @@ existing_channels = set()
 responded_to_channel = False
 current_channel_id = None
 
+def error_popup():
+    eg.msgbox('Error testing!', 'Script encountered and error', ok_button='OK')
 
 # Checks to see if any new channels were created and joins them, runs every 3 seconds
 def check_new_channels():
@@ -52,6 +55,7 @@ def check_new_channels():
             existing_channels = channel_ids
     except SlackApiError as e:
         print(f"Error fetching channels: {e}")
+        error_popup()
 
 # Gets all the existing channels in the Slack and stores them in a set
 def initialize_channels():
@@ -62,6 +66,7 @@ def initialize_channels():
         existing_channels = set(channel['id'] for channel in channels)
     except SlackApiError as e:
         print(f"Error fetching channels: {e.response['error']}")
+        error_popup()
 
 # Turn the Blink1 light off
 def turn_off_blink1():
@@ -104,6 +109,7 @@ def process_events(client: SocketModeClient, req: SocketModeRequest):
                 client.web_client.conversations_join(channel=event["channel"]["id"])
             except SlackApiError as e:
                 print(f"Error joining channel: {e.response['error']}")
+                error_popup()
 
         # Handles messages in the channel
         if event["type"] == "message":
