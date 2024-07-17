@@ -27,8 +27,9 @@ existing_channels = set()
 responded_to_channel = False
 current_channel_id = None
 
+# 
 def error_popup():
-    eg.msgbox('Error testing!', 'Script encountered and error', ok_button='OK')
+    eg.msgbox('The Python script has encountered an error and might need a restart.', 'Script encountered an error', ok_button='OK')
 
 # Checks to see if any new channels were created and joins them, runs every 3 seconds
 def check_new_channels():
