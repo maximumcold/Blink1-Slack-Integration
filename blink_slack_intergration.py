@@ -20,7 +20,7 @@ client = WebClient(token=SLACK_BOT_TOKEN)
 socket_mode_client = SocketModeClient(app_token=SLACK_APP_TOKEN, web_client=client) 
 
 # Slack user ID that is used to determine if a channel was responsed to
-slack_id = 'ABC123'
+slack_id = '123ABC'
 
 # Global variables to keep track of the channels and if a channel was responded to
 existing_channels = set()
@@ -67,8 +67,6 @@ def handle_message(payload):
         elif user_id == slack_id:
             print("Turning light off")
             turn_off_blink1()
-        else:
-            print("missed if statement")
 
 # Event handler for incoming events
 def process_events(client: SocketModeClient, req: SocketModeRequest):
@@ -101,8 +99,6 @@ def process_events(client: SocketModeClient, req: SocketModeRequest):
 # Add the event handler to the SocketModeClient and connect to Slack
 socket_mode_client.socket_mode_request_listeners.append(process_events)
 socket_mode_client.connect()
-
-initialize_channels()
 
 while True:
     initialize_channels()
