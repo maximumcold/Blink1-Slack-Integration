@@ -20,43 +20,15 @@ client = WebClient(token=SLACK_BOT_TOKEN)
 socket_mode_client = SocketModeClient(app_token=SLACK_APP_TOKEN, web_client=client) 
 
 # Slack user ID that is used to determine if a channel was responsed to
-slack_id = 'U07BMJZUWKF'
+slack_id = 'ABC123'
 
 # Global variables to keep track of the channels and if a channel was responded to
 existing_channels = set()
 responded_to_channel = False
 current_channel_id = None
 
-# 
 def error_popup():
     eg.msgbox('The Python script has encountered an error and might need a restart.', 'Script encountered an error', ok_button='OK')
-
-# Checks to see if any new channels were created and joins them, runs every 3 seconds
-def check_new_channels():
-    global existing_channels, responded_to_channel, current_channel_id
-    try:
-        # Retrieves the channels from Slack
-        response = client.conversations_list(types="public_channel,private_channel")
-        channels = response['channels']
-        channel_ids = set([channel['id'] for channel in channels]) 
-        
-        # Checks for new channels and if so, joins them and sets responded_to_channel to True
-        new_channels = channel_ids - existing_channels
-        
-        if new_channels:
-            # Join new channels
-            responded_to_channel = True
-            for channel_id in new_channels:
-                try:
-                    client.conversations_join(channel=channel_id)
-                except SlackApiError as e:
-                    print(f"Error joining channel: {e.response['error']}")
-                    
-            # Update the existing channels
-            existing_channels = channel_ids
-    except SlackApiError as e:
-        print(f"Error fetching channels: {e}")
-        error_popup()
 
 # Gets all the existing channels in the Slack and stores them in a set
 def initialize_channels():
@@ -87,11 +59,16 @@ def handle_message(payload):
     if event['type'] == 'message':
         channel_id = event.get('channel')  # Get the channel ID of the message
         user_id = event.get('user')  # Get the user ID of the message sender
-     
+        
+        print(f'Channel ID: {channel_id} Current Channel ID: {current_channel_id}')
         # Checks if the message was sent by the user and is in the current channel (newest created)
-        if user_id == slack_id and channel_id == current_channel_id:
-            responded_to_channel = False
+        if event.get('subtype') == 'bot_message' or event.get('subtype') == 'channel_join':
+            print("Bot reponse")
+        elif user_id == slack_id:
+            print("Turning light off")
             turn_off_blink1()
+        else:
+            print("missed if statement")
 
 # Event handler for incoming events
 def process_events(client: SocketModeClient, req: SocketModeRequest):
@@ -101,19 +78,21 @@ def process_events(client: SocketModeClient, req: SocketModeRequest):
     if req.type == "events_api":
         payload = req.payload
         event = payload["event"]
-        print(f"Received event: {event['type']}")
+        print(f"Received event: {event}")
 
         # Joins the new channel when it is created
         if event["type"] == "channel_created":
-            current_channel_id = event["channel"]["id"]
+            flash_blink1()
+            current_channel_id = event.get('channel')
             try:
                 client.web_client.conversations_join(channel=event["channel"]["id"])
+                print('Channel joined')
             except SlackApiError as e:
                 print(f"Error joining channel: {e.response['error']}")
                 error_popup()
 
         # Handles messages in the channel
-        if event["type"] == "message":
+        if event["type"] == 'message':
             handle_message(payload)
 
         response = SocketModeResponse(envelope_id=req.envelope_id)
@@ -126,7 +105,5 @@ socket_mode_client.connect()
 initialize_channels()
 
 while True:
-    check_new_channels()
-    while responded_to_channel:
-        flash_blink1()
+    initialize_channels()
     time.sleep(3) # Check for new channels every 3 seconds, API only a few requests per minute thus the delay
